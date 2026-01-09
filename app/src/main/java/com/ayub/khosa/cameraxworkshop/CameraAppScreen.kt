@@ -19,12 +19,10 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat.startActivity
 import androidx.core.content.FileProvider
 import androidx.core.net.toFile
 import java.io.File
@@ -40,7 +38,6 @@ fun CameraAppScreen() {
     var filter by   remember { mutableStateOf(false) }
     var grayscaleFilter by remember { mutableStateOf(false) }
     val imageCaptureUseCase = remember { ImageCapture.Builder().build() }
-
 
     var zoomLevel by remember { mutableFloatStateOf(0.0f) }
 
@@ -197,6 +194,8 @@ fun Uri.shareAsImage(context: Context) {
 
     val contentUri = FileProvider.getUriForFile(context,
         "com.ayub.khosa.cameraxworkshop.fileprovider", toFile())
+
+        PrintLogs.printInfo("contentUri ->  "+contentUri)
     val shareIntent: Intent = Intent().apply {
         action = Intent.ACTION_SEND
         putExtra(Intent.EXTRA_STREAM, contentUri)

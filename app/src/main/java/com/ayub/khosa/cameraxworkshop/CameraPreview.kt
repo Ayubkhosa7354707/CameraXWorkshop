@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.LifecycleOwner
 import androidx.camera.core.CameraEffect.PREVIEW
+import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.media3.effect.Media3Effect
 import androidx.media3.common.Effect
@@ -40,7 +41,7 @@ fun CameraPreview(
     modifier: Modifier = Modifier,
 ) {
 
-    val previewUseCase = remember { androidx.camera.core.Preview.Builder().build() }
+    val previewUseCase = remember { Preview.Builder().build() }
 
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
     var cameraControl by remember { mutableStateOf<CameraControl?>(null) }
@@ -61,9 +62,7 @@ fun CameraPreview(
 
 
 
-        var useCaseGroup  = UseCaseGroup.Builder()
-            .addUseCase(previewUseCase)
-            .build()
+        var useCaseGroup: UseCaseGroup
 
         if(filter){
             var effectsList= arrayListOf<Effect>()
