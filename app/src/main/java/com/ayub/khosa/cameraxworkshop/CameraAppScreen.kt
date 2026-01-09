@@ -17,11 +17,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat.startActivity
 import androidx.core.content.FileProvider
 import androidx.core.net.toFile
 import java.io.File
@@ -34,11 +37,15 @@ import java.util.concurrent.Executors
 @Composable
 fun CameraAppScreen() {
     var lensFacing by remember { mutableIntStateOf(CameraSelector.LENS_FACING_FRONT) }
-    var zoomLevel by remember { mutableFloatStateOf(0.0f) }
+    var filter by   remember { mutableStateOf(false) }
+    var grayscaleFilter by remember { mutableStateOf(false) }
     val imageCaptureUseCase = remember { ImageCapture.Builder().build() }
 
+
+    var zoomLevel by remember { mutableFloatStateOf(0.0f) }
+
     val localContext = LocalContext.current
-  val outputDirectory = remember { createPublicDirectory() }
+   val outputDirectory = remember { createPublicDirectory() }
 
 
     val cameraExecutor: ExecutorService = remember { Executors.newSingleThreadExecutor() }
@@ -48,10 +55,13 @@ fun CameraAppScreen() {
         CameraPreview(
             lensFacing = lensFacing,
             zoomLevel = zoomLevel,
-            imageCaptureUseCase = imageCaptureUseCase
+            imageCaptureUseCase = imageCaptureUseCase,
+            filter = filter,
+            grayscaleFilter = grayscaleFilter,
+            cameraExecutor = cameraExecutor,
         )
 
-        Column(modifier = Modifier.align(Alignment.Center)) {
+        Column(modifier = Modifier.align(Alignment.BottomCenter)) {
             Row {
                 Button(onClick = { lensFacing = CameraSelector.LENS_FACING_FRONT }) {
                     Text("Front camera")
@@ -72,9 +82,33 @@ fun CameraAppScreen() {
                     Text("Zoom 1.0")
                 }
             }
+            Row {
+                Button(onClick = {
+                    if(filter){
+                        filter=false
+                    }else{
+                        filter=true
+                    }
+                }) {
+                    Text("filter")
+                }
+                Button(onClick = {
+                    if(grayscaleFilter){
+                        grayscaleFilter=false
+                    }else{
+                        grayscaleFilter=true
+                    }
+                }) {
+
+                    if(grayscaleFilter){
+                        Text("Inverted Filter")
+                    }else{
+                        Text("grayscale Filter")
+                    }
+                }
+            }
 
             Button(onClick = {
-
                 takePhoto(outputDirectory , cameraExecutor  ,imageCaptureUseCase , localContext)
                }) {
                 Text("Take Photo")
@@ -111,10 +145,13 @@ private fun  takePhoto(
         override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
             // Image saved successfully, do something with the photoFile
             PrintLogs.printInfo(" image uri ->  "+outputFileResults.savedUri)
-             shareAsImage(outputFileResults.savedUri as Uri,localContext)
+
+            outputFileResults.savedUri?.shareAsImage(localContext)
         }
 
         override fun onError(exception: ImageCaptureException) {
+
+            PrintLogs.printE(" ImageCaptureException  "+exception.message)
         }
     }
     imageCaptureUseCase.takePicture(outputFileOptions, cameraExecutor, callback)
@@ -152,28 +189,22 @@ fun createPublicDirectory(): File? {
 
 
 
-//fun getOutputDirectory(context: Context): File {
-//    // You can choose to save to the app's cache directory, files directory,
-//    // or a public external directory (with proper permissions).
-//
-//    // Example: Save to the app's private files directory
-//    val outputDir = File(context.filesDir, "my_app_output")
-//
-//    // Ensure the directory exists
-//    if (!outputDir.exists()) {
-//        outputDir.mkdirs() // Use mkdirs() to create any necessary parent directories
-//    }
-//    return outputDir
-//}
 
 
+fun Uri.shareAsImage(context: Context) {
+    try {
 
-fun shareAsImage(uri: Uri, context: Context) {
-    val contentUri = uri
+
+    val contentUri = FileProvider.getUriForFile(context,
+        "com.ayub.khosa.cameraxworkshop.fileprovider", toFile())
     val shareIntent: Intent = Intent().apply {
         action = Intent.ACTION_SEND
         putExtra(Intent.EXTRA_STREAM, contentUri)
         type = "image/jpeg"
     }
     context.startActivity(Intent.createChooser(shareIntent, null))
+
+} catch (e: Exception) {
+    PrintLogs.printD("Exception  " + e.message)
+}
 }
